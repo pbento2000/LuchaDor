@@ -10,6 +10,7 @@ public class CharacterController2D : MonoBehaviour
 	[SerializeField] private LayerMask m_WhatIsGround;							// A mask determining what is ground to the character
 	[SerializeField] private Transform m_GroundCheck;							// A position marking where to check if the player is grounded.
 	[SerializeField] private Transform m_StickCheck;
+	[SerializeField] private Transform m_StickCheck2;
 	[SerializeField] private Transform m_CeilingCheck;							// A position marking where to check for ceilings
 	[SerializeField] private Collider2D m_CrouchDisableCollider;				// A collider that will be disabled when crouching
 	[SerializeField] private float m_DashForce = 400f;
@@ -24,6 +25,7 @@ public class CharacterController2D : MonoBehaviour
 	private float delay = 0.0f;
 	private float delayDash = 0.0f;
 	private bool grabbed = false;
+	private bool anda = false;
 
 	[Header("Events")]
 	[Space]
@@ -49,6 +51,7 @@ public class CharacterController2D : MonoBehaviour
 
 	private void FixedUpdate()
 	{
+		anda = false;
 		bool wasGrounded = m_Grounded;
 		m_Grounded = false;
 		m_Sticked = false;
@@ -69,9 +72,14 @@ public class CharacterController2D : MonoBehaviour
 		}
 
 		if (Physics2D.OverlapCircle(m_StickCheck.position, k_CeilingRadius, m_WhatIsGround))
-			{
+		{
 				m_Sticked = true;
-			}
+				anda = true;
+		}
+		if (Physics2D.OverlapCircle(m_StickCheck2.position, k_CeilingRadius, m_WhatIsGround))
+		{
+				m_Sticked = true;
+		}
 		if (Physics2D.OverlapCircle(m_CeilingCheck.position, k_CeilingRadius, m_WhatIsGround))
 		{
 			m_Sticked = true;
@@ -123,13 +131,15 @@ public class CharacterController2D : MonoBehaviour
 					}
 				}
 
-				if (!m_Sticked && !grabbed)
+				if (!m_Sticked || !grabbed)
 				{
-					Debug.Log("Puta");
+					//Debug.Log(anda);
 					// Move the character by finding the target velocity
+					if(!anda){
 					Vector3 targetVelocity = new Vector2(move * 10f, m_Rigidbody2D.velocity.y);
 					// And then smoothing it out and applying it to the character
 					m_Rigidbody2D.velocity = Vector3.SmoothDamp(m_Rigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
+					}
 				}
 				// If the input is moving the player right and the player is facing left...
 				if (move > 0 && !m_FacingRight)
