@@ -38,6 +38,7 @@ public class PlayerMovement : MonoBehaviour
         dash = false;
     }
 
+
     void OnCollisionEnter2D(Collision2D col)
     {
         if (col.gameObject.name.Equals("PlataformaMovel"))
@@ -52,5 +53,6 @@ public class PlayerMovement : MonoBehaviour
             this.transform.parent = null;
         }
     }
+
 
 }

@@ -10,6 +10,7 @@ public class CharacterController2D : MonoBehaviour
 	[SerializeField] private LayerMask m_WhatIsGround;							// A mask determining what is ground to the character
 	[SerializeField] private Transform m_GroundCheck;							// A position marking where to check if the player is grounded.
 	[SerializeField] private Transform m_StickCheck;
+	[SerializeField] private Transform m_StickCheck2;
 	[SerializeField] private Transform m_CeilingCheck;							// A position marking where to check for ceilings
 	[SerializeField] private Collider2D m_CrouchDisableCollider;				// A collider that will be disabled when crouching
 	[SerializeField] private float m_DashForce = 400f;
@@ -23,6 +24,7 @@ public class CharacterController2D : MonoBehaviour
 	private Vector3 m_Velocity = Vector3.zero;
 	private float delay = 0.0f;
 	private float delayDash = 0.0f;
+	private bool grabbed = false;
 
 	[Header("Events")]
 	[Space]
@@ -51,6 +53,8 @@ public class CharacterController2D : MonoBehaviour
 		bool wasGrounded = m_Grounded;
 		m_Grounded = false;
 		m_Sticked = false;
+		m_Rigidbody2D.isKinematic = false;
+		grabbed = false;
 
 		// The player is grounded if a circlecast to the groundcheck position hits anything designated as ground
 		// This can be done using layers instead but Sample Assets will not overwrite your project settings.
@@ -66,14 +70,31 @@ public class CharacterController2D : MonoBehaviour
 		}
 
 		if (Physics2D.OverlapCircle(m_StickCheck.position, k_CeilingRadius, m_WhatIsGround))
-			{
+		{
 				m_Sticked = true;
-			}
+		}
+		if (Physics2D.OverlapCircle(m_StickCheck2.position, k_CeilingRadius, m_WhatIsGround))
+		{
+				m_Sticked = true;
+		}
+		if (Physics2D.OverlapCircle(m_CeilingCheck.position, k_CeilingRadius, m_WhatIsGround))
+		{
+			m_Sticked = true;
+		}
+
+		if (Input.GetButton("Grab") && m_Sticked && Time.time > delay)
+		{
+			m_Rigidbody2D.isKinematic = true;
+			m_Rigidbody2D.velocity = Vector3.zero;
+			grabbed = true;
+		}
+		//Debug.Log(m_Sticked);
 	}
 
 
 	public void Move(float move, bool crouch, bool jump, bool dash)
 	{
+
 		//only control the player if grounded or airControl is turned on
 		if(Time.time > delay){
 			if (m_Grounded || m_AirControl)
@@ -107,11 +128,14 @@ public class CharacterController2D : MonoBehaviour
 					}
 				}
 
-				// Move the character by finding the target velocity
-				Vector3 targetVelocity = new Vector2(move * 10f, m_Rigidbody2D.velocity.y);
-				// And then smoothing it out and applying it to the character
-				m_Rigidbody2D.velocity = Vector3.SmoothDamp(m_Rigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
-
+				if (!m_Sticked || !grabbed)
+				{
+					Debug.Log("Puta");
+					// Move the character by finding the target velocity
+					Vector3 targetVelocity = new Vector2(move * 10f, m_Rigidbody2D.velocity.y);
+					// And then smoothing it out and applying it to the character
+					m_Rigidbody2D.velocity = Vector3.SmoothDamp(m_Rigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
+				}
 				// If the input is moving the player right and the player is facing left...
 				if (move > 0 && !m_FacingRight)
 				{
@@ -127,18 +151,21 @@ public class CharacterController2D : MonoBehaviour
 			}
 			// If the player should jump...
 
-			if(m_Sticked && move < 0 && jump){
+			if(m_Sticked && move > 0 && jump && grabbed){
+				m_Rigidbody2D.isKinematic = false;
 				m_Sticked = false;
+				grabbed = false;
 				m_Rigidbody2D.AddForce(new Vector2(600.0f, m_JumpForce));
 				delay = Time.time + 0.1f;
-			}else if(m_Sticked && move > 0 && jump){
+			}else if(m_Sticked && move < 0 && jump && grabbed){
+				m_Rigidbody2D.isKinematic = false;
 				m_Sticked = false;
+				grabbed = false;
 				m_Rigidbody2D.AddForce(new Vector2(-600.0f, m_JumpForce));
 				delay = Time.time + 0.1f;
 			}
 			else if (m_Grounded && jump)
 			{
-				Debug.Log("Filha da puta entraste");
 				// Add a vertical force to the player.
 				m_Grounded = false;
 				m_Rigidbody2D.AddForce(new Vector2(0f, m_JumpForce));
