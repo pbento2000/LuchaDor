@@ -37,4 +37,22 @@ public class PlayerMovement : MonoBehaviour
         jump = false;
         dash = false;
     }
+
+
+    void OnCollisionEnter2D(Collision2D col)
+    {
+        if (col.gameObject.name.Equals("PlataformaMovel"))
+        {
+            this.transform.parent = col.transform;
+        }
+    }
+    void OnCollisionExit2D(Collision2D col)
+    {
+        if (col.gameObject.name.Equals("PlataformaMovel"))
+        {
+            this.transform.parent = null;
+        }
+    }
+
+
 }
